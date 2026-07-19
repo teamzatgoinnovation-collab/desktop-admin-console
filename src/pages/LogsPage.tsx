@@ -1,14 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/DataTable";
-import { PageHeader } from "@/components/PageHeader";
-import { SearchField } from "@/components/SearchField";
+import { DataTable, ErrorState, PageHeader, SearchField } from "@zatgo/ui";
 import { mockRepo, type LogRecord } from "@/lib/mock-data";
 
 export function LogsPage() {
   const [search, setSearch] = useState("");
-  const { data = [] } = useQuery({
+  const { data = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin", "logs"],
     queryFn: () => mockRepo.listLogs(),
   });
@@ -34,6 +32,16 @@ export function LogsPage() {
     [],
   );
 
+  if (isError) {
+    return (
+      <ErrorState
+        title="Could not load logs"
+        description={error instanceof Error ? error.message : String(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -43,7 +51,13 @@ export function LogsPage() {
           <SearchField value={search} onChange={setSearch} placeholder="Search logs…" />
         }
       />
-      <DataTable data={data} columns={columns} globalFilter={search} emptyMessage="No logs" />
+      <DataTable
+        data={data}
+        columns={columns}
+        globalFilter={search}
+        emptyMessage="No logs"
+        loading={isLoading}
+      />
     </div>
   );
 }

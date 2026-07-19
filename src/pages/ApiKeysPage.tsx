@@ -1,15 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@zatgo/ui";
+import {
+  Button,
+  DataTable,
+  ErrorState,
+  FormDialog,
+  PageHeader,
+  SearchField,
+} from "@zatgo/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import type { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/DataTable";
-import { FormDialog } from "@/components/FormDialog";
-import { PageHeader } from "@/components/PageHeader";
-import { SearchField } from "@/components/SearchField";
 import { mockRepo, type ApiKeyRecord } from "@/lib/mock-data";
 
 const schema = z.object({
@@ -26,7 +29,7 @@ export function ApiKeysPage() {
   const [editing, setEditing] = useState<ApiKeyRecord | null>(null);
   const [open, setOpen] = useState(false);
 
-  const { data = [] } = useQuery({
+  const { data = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin", "api-keys"],
     queryFn: () => mockRepo.listApiKeys(),
   });
@@ -112,6 +115,16 @@ export function ApiKeysPage() {
     [form, remove],
   );
 
+  if (isError) {
+    return (
+      <ErrorState
+        title="Could not load API keys"
+        description={error instanceof Error ? error.message : String(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -132,7 +145,13 @@ export function ApiKeysPage() {
           </>
         }
       />
-      <DataTable data={data} columns={columns} globalFilter={search} emptyMessage="No API keys" />
+      <DataTable
+        data={data}
+        columns={columns}
+        globalFilter={search}
+        emptyMessage="No API keys"
+        loading={isLoading}
+      />
 
       <FormDialog
         open={open}

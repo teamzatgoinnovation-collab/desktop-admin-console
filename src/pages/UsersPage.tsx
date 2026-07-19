@@ -1,15 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@zatgo/ui";
+import {
+  Button,
+  DataTable,
+  ErrorState,
+  FormDialog,
+  PageHeader,
+  SearchField,
+} from "@zatgo/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import type { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/DataTable";
-import { FormDialog } from "@/components/FormDialog";
-import { PageHeader } from "@/components/PageHeader";
-import { SearchField } from "@/components/SearchField";
 import { mockRepo, type UserRecord } from "@/lib/mock-data";
 
 const schema = z.object({
@@ -28,7 +31,7 @@ export function UsersPage() {
   const [editing, setEditing] = useState<UserRecord | null>(null);
   const [open, setOpen] = useState(false);
 
-  const { data = [] } = useQuery({
+  const { data = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin", "users"],
     queryFn: () => mockRepo.listUsers(),
   });
@@ -125,6 +128,16 @@ export function UsersPage() {
     [form, remove],
   );
 
+  if (isError) {
+    return (
+      <ErrorState
+        title="Could not load users"
+        description={error instanceof Error ? error.message : String(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -151,7 +164,13 @@ export function UsersPage() {
           </>
         }
       />
-      <DataTable data={data} columns={columns} globalFilter={search} emptyMessage="No users" />
+      <DataTable
+        data={data}
+        columns={columns}
+        globalFilter={search}
+        emptyMessage="No users"
+        loading={isLoading}
+      />
 
       <FormDialog
         open={open}
